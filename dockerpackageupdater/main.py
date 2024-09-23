@@ -34,10 +34,15 @@ def extract_apk_packages(dockerfile_content: str) -> list:
   return list(packages)
 
 
-def main(containerfile: str):
-  dockerfile_content = read_containerfile(containerfile)
-  packages = extract_apk_packages(dockerfile_content)
-  logging.info(f'Found {len(packages)} apk packages in {containerfile}')
+def main(container_file: str):
+  container_file_content = read_containerfile(container_file)
+
+  packages = []
+
+  if 'apk add' in container_file_content:
+    packages = extract_apk_packages(container_file_content)
+
+  logging.info(f'Found {len(packages)} apk packages in {container_file}')
   logging.debug('Detected packages:')
   for package in packages:
     logging.debug(f'{package}')
