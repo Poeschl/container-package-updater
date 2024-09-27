@@ -1,6 +1,7 @@
+import argparse
 import logging
 import re
-from optparse import OptionParser
+import sys
 
 
 class Package:
@@ -51,14 +52,14 @@ def main(container_file: str):
 
 
 if __name__ == '__main__':
-  logging.basicConfig(level=logging.DEBUG)
+  logging.basicConfig(level=logging.DEBUG,
+                      format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+                      datefmt="%Y-%m-%d %H:%M:%S",
+                      stream=sys.stdout)
   logging.info('Init docker package updater')
 
-  parser = OptionParser()
-  parser.add_option("--containerfile", help="The container file to check", dest="containerfile", default=None)
-  opts, args = parser.parse_args()
+  parser = argparse.ArgumentParser(description='Docker Package Updater')
+  parser.add_argument('--containerfile', required=True, help='The container file to check')
+  args = parser.parse_args()
 
-  if not opts.containerfile:
-    parser.error("The --containerfile option is required.")
-
-  exit(main(opts.containerfile))
+  exit(main(args.containerfile))
