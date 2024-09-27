@@ -3,6 +3,8 @@ import logging
 import re
 import sys
 
+import requests
+
 
 class Package:
   def __init__(self, name: str, version: str):
@@ -35,7 +37,25 @@ def extract_apk_packages(dockerfile_content: str) -> list:
   return list(packages)
 
 
-def main(container_file: str):
+def get_latest_version_of_apk_package(alpine_version: str, package_name: str) -> Package:
+  if alpine_version is None:
+    raise ValueError('Alpine version is required to check for the latest package version')
+
+  url = f'https://pkgs.alpinelinux.org/package/v{alpine_version}/main/x86_64/{package_name}'
+  response = requests.get(url)
+
+  if response.status_code != 200:
+    raise Exception(f'Failed to fetch package info: {response.status_code}')
+
+  match = re.search(r'<td class="version">([^<]+)</td>', response.text)
+  if not match:
+    raise Exception(f'Could not find version info for package {package_name}')
+
+  latest_version = match.group(1)
+  return Package(name=package_name, version=latest_version)
+
+
+def main(container_file: str, alpine_version: str) -> int:
   container_file_content = read_containerfile(container_file)
 
   packages = []
@@ -60,6 +80,8 @@ if __name__ == '__main__':
 
   parser = argparse.ArgumentParser(description='Docker Package Updater')
   parser.add_argument('--containerfile', required=True, help='The container file to check')
+  parser.add_argument('--alpine_version', required=False, help='The alpine version to use for the version check')
+
   args = parser.parse_args()
 
-  exit(main(args.containerfile))
+  exit(main(args.containerfile, args.alpine_version))
