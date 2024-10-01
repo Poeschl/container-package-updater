@@ -59,7 +59,7 @@ def fetch_latest_version_of_apk_package(alpine_version: str, package_name: str, 
     if response.status_code != 200:
       raise Exception(f'Failed to fetch package info from main and community: {response.status_code}')
 
-  match = re.search(r'<th class="header">Version</th>\s*<td>\s*([^<\s]+)\s*</td>', response.text)
+  match = re.search(r'<th class="header">Version</th>\s*<td>\s*(?:<strong>)?([^<\s]+)(?:</strong>)?\s*</td>', response.text)
   response.close()
   if not match:
     raise Exception(f'Could not find version info for package "{package_name}"')
