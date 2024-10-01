@@ -18,6 +18,9 @@ class PackageManagerHandler(ABC):
   def find_online_updates(self, os_version: str, package_name: str, architectures: List[str]) -> List[Package]:
     pass
 
+  @abstractmethod
+  def update_package_in_containerfile(self, containerfile_content: str, package: Package, latest_package: Package) -> str:
+    pass
 
 class ApkPackageManager(PackageManagerHandler):
 
@@ -63,3 +66,6 @@ class ApkPackageManager(PackageManagerHandler):
       raise Exception(f'Could not find version info for package "{package_name}"')
 
     return match.group(1)
+
+  def update_package_in_containerfile(self, containerfile_content: str, package: Package, latest_package: Package) -> str:
+    return containerfile_content.replace(f'{package.name}={package.version}', f'{package.name}={latest_package.version}')
