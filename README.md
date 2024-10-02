@@ -1,4 +1,4 @@
-# Docker Package Updater
+# Container Package Updater
 
 It will scan a Containerfile and suggest updates for the packages in it.
 

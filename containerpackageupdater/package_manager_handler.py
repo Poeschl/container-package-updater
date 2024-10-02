@@ -5,7 +5,7 @@ from typing import List
 
 import requests
 
-from dockerpackageupdater.models import Package
+from containerpackageupdater.models import Package
 
 
 class PackageManagerHandler(ABC):

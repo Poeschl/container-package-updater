@@ -3,9 +3,9 @@ import logging
 import os
 import sys
 
-from dockerpackageupdater.gh import reset_to_main_branch, commit_file_to_new_branch, push_branch, create_pull_request
-from dockerpackageupdater.models import Package
-from dockerpackageupdater.package_manager_handler import ApkPackageManager, PackageManagerHandler
+from containerpackageupdater.gh import reset_to_main_branch, commit_file_to_new_branch, push_branch, create_pull_request
+from containerpackageupdater.models import Package
+from containerpackageupdater.package_manager_handler import ApkPackageManager, PackageManagerHandler
 
 
 def read_containerfile(file_path: str) -> str:
