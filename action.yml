@@ -1,0 +1,38 @@
+name: 'Container Package Updater'
+description: 'Scans a given Containerfile and opens PRs to update outdated packages'
+inputs:
+  token:
+    description: 'The GitHub token to use for PR creation'
+    required: true
+  containerFile:
+    description: 'The container file to check'
+    required: true
+  repository:
+    description: 'The repository update PRs should be created in'
+    required: false
+    default: ${{ github.repository }}
+  osVersion:
+    description: 'The OS version to use for the version check. Example "3.18" for Alpine'
+    required: false
+    default: '3.18'
+  architectures:
+    description: 'The architectures to check. (Comma separated in string)'
+    required: false
+    default: 'x86_64'
+runs:
+  using: "composite"
+  steps:
+    - name: 🏗️ Setup python environment
+      run: |
+        pip install pipenv
+        pipenv install --dev
+
+    - name: 🚀 Run Container Package Updater
+      shell: bash
+      run: |
+        pipenv run python containerpackageupdater/main.py 
+          --token ${{ inputs.token }} 
+          --containerFile ${{ inputs.containerFile }} 
+          --repository ${{ inputs.repository }} 
+          --osVersion ${{ inputs.osVersion }} 
+          --architecture ${{ inputs.architectures }}
