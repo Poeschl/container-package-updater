@@ -21,7 +21,7 @@ inputs:
     default: 'x86_64'
 runs:
   using: "docker"
-  image: Containerfile
+  image: Dockerfile
   args:
     - '--token'
     - ${{ inputs.token }}
