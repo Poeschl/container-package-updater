@@ -23,6 +23,7 @@ runs:
   using: "composite"
   steps:
     - name: 🏗️ Setup python environment
+      shell: bash
       run: |
         pip install pipenv
         pipenv install --dev
