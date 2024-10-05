@@ -19,4 +19,4 @@ RUN apt-get update && apt-get -y --no-install-recommends install \
 COPY --from=build /action/workspace/.venv /action/workspace/.venv
 COPY containerpackageupdater/*.py /action/workspace/containerpackageupdater/
 
-ENTRYPOINT [".venv/bin/python", "/action/workspace/containerpackageupdater/main.py"]
+ENTRYPOINT ["/action/workspace/.venv/bin/python", "/action/workspace/containerpackageupdater/main.py"]
