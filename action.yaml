@@ -3,8 +3,7 @@ description: 'Scans a given Containerfile and opens PRs to update outdated packa
 inputs:
   token:
     description: 'The GitHub token to use for PR creation'
-    required: false
-    default: ${{ secrets.GITHUB_TOKEN }}
+    required: true
   containerFile:
     description: 'The container file to check'
     required: true
