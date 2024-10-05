@@ -21,20 +21,16 @@ inputs:
     required: false
     default: 'x86_64'
 runs:
-  using: "composite"
-  steps:
-    - name: 🏗️ Setup python environment
-      shell: bash
-      run: |
-        pip install pipenv
-        pipenv install --dev
-
-    - name: 🚀 Run Container Package Updater
-      shell: bash
-      run: |
-        pipenv run python containerpackageupdater/main.py 
-          --token ${{ inputs.token }} 
-          --containerFile ${{ inputs.containerFile }} 
-          --repository ${{ inputs.repository }} 
-          --osVersion ${{ inputs.osVersion }} 
-          --architecture ${{ inputs.architectures }}
+  using: "docker"
+  image: Containerfile
+  args:
+    - '--token'
+    - ${{ inputs.token }}
+    - '--containerFile'
+    - ${{ inputs.containerFile }}
+    - '--repository'
+    - ${{ inputs.repository }}
+    - '--osVersion'
+    - ${{ inputs.osVersion }}
+    - '--architecture'
+    - ${{ inputs.architectures }}
