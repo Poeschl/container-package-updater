@@ -11,7 +11,7 @@ jobs:
       matrix:
         test:
           - osVersion: 3.18
-            file: test-files/ContainerFile-apk
+            file: test-files/alpine-Containerfile
             architectures: "x86_64, aarch64, armhf, armv7, x86"
     steps:
       - name: ↩️ Checkout
