@@ -7,7 +7,7 @@ inputs:
   repositoryWorkspace:
     description: "The path to the workspace of the checked out project. Will be set via 'github.workspace'"
     required: false
-    default: ${{ github.workspace }}
+    default: /github/workspace
   containerFile:
     description: "The container file to check"
     required: true
