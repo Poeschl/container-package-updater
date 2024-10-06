@@ -1,0 +1,27 @@
+name: Test updater action
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  check-for-updates:
+    name: Check for updates
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        test:
+          - osVersion: 3.18
+            file: test-files/ContainerFile-apk
+            architectures: "x86_64, aarch64, armhf, armv7, x86"
+    steps:
+      - name: ↩️ Checkout
+        uses: actions/checkout@v4
+
+      - name: 🚀 Run Updater
+        uses: ./
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          containerFile: ${{ matrix.test.file }}
+          osVersion: ${{ matrix.test.osVersion }}
+          architectures: ${{ matrix.test.architectures }}
+          dryRun: true
