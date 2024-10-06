@@ -4,6 +4,10 @@ inputs:
   token:
     description: "The GitHub token to use for PR creation"
     required: true
+  repositoryWorkspace:
+    description: "The path to the workspace of the checked out project. Will be set via 'github.workspace'"
+    required: false
+    default: ${{ github.workspace }}
   containerFile:
     description: "The container file to check"
     required: true

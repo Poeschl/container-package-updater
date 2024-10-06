@@ -4,14 +4,14 @@ import git
 from github import Github
 
 
-def reset_to_main_branch():
-  repo = git.Repo('.')
+def reset_to_main_branch(repo_path: str):
+  repo = git.Repo(repo_path)
   repo.git.checkout('main')
   repo.git.reset('--hard', 'origin/main')
 
 
-def commit_file_to_new_branch(branch_name: str, file_path: str, commit_message: str):
-  repo = git.Repo('.')
+def commit_file_to_new_branch(repo_path: str, branch_name: str, file_path: str, commit_message: str):
+  repo = git.Repo(repo_path)
   if branch_name in repo.heads:
     raise ValueError(f'Branch {branch_name} already exists.')
   repo.git.checkout('HEAD', b=branch_name)
@@ -20,8 +20,8 @@ def commit_file_to_new_branch(branch_name: str, file_path: str, commit_message: 
   logging.info(f'Created branch {branch_name} and committed changes.')
 
 
-def push_branch(branch_name: str):
-  repo = git.Repo('.')
+def push_branch(repo_path: str, branch_name: str):
+  repo = git.Repo(repo_path)
   repo.git.push('origin', branch_name)
 
 
