@@ -1,37 +1,41 @@
-name: 'Container Package Updater'
-description: 'Scans a given Containerfile and opens PRs to update outdated packages'
+name: "Container Package Updater"
+description: "Scans a given Containerfile and opens PRs to update outdated packages"
 inputs:
   token:
-    description: 'The GitHub token to use for PR creation'
+    description: "The GitHub token to use for PR creation"
     required: true
   containerFile:
-    description: 'The container file to check'
+    description: "The container file to check"
     required: true
+  repository:
+    description: "The repository update PRs should be created in"
+    required: false
+    default: ${{ github.repository }}
   osVersion:
     description: 'The OS version to use for the version check. Example "3.18" for Alpine'
     required: false
-    default: '3.18'
+    default: "3.18"
   architectures:
-    description: 'The architectures to check. (Comma separated in string)'
+    description: "The architectures to check. (Comma separated in string)"
     required: false
-    default: 'x86_64'
+    default: "x86_64"
   dryRun:
-    description: 'If true, no PR will be created'
+    description: "If true, no PR will be created"
     required: false
-    default: 'false'
+    default: "false"
 runs:
   using: "docker"
   image: Dockerfile
   args:
-    - '--token'
+    - "--token"
     - ${{ inputs.token }}
-    - '--containerFile'
+    - "--containerFile"
     - ${{ inputs.containerFile }}
-    - '--repository'
-    - ${{ github.repository }}
-    - '--osVersion'
+    - "--repository"
+    - ${{ inputs.repository }}
+    - "--osVersion"
     - ${{ inputs.osVersion }}
-    - '--architecture'
+    - "--architecture"
     - ${{ inputs.architectures }}
-    - '--dryRun'
+    - "--dryRun"
     - ${{ inputs.dryRun }}
