@@ -35,6 +35,8 @@ runs:
     - ${{ inputs.token }}
     - "--containerFile"
     - ${{ inputs.containerFile }}
+    - "--repositoryWorkspace"
+    - ${{ inputs.repositoryWorkspace }}
     - "--repository"
     - ${{ inputs.repository }}
     - "--osVersion"
