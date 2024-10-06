@@ -10,12 +10,13 @@ jobs:
     strategy:
       matrix:
         test:
-          - osVersion: 3.18
-            file: test-files/alpine-Containerfile
+          - file: test-files/alpine-Containerfile
+            osVersion: 3.18
             architectures: "x86_64, aarch64, armhf, armv7, x86"
-          - osVersion: bookworm
-            file: test-files/debian-Containerfile
+          - file: test-files/debian-Containerfile
+            osVersion: bookworm
             architectures: "amd64, arm64, i386, armel, armhf"
+      fail-fast: false
     steps:
       - name: ↩️ Checkout
         uses: actions/checkout@v4
