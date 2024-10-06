@@ -57,6 +57,10 @@ def main(token: str, dry_run: bool, repo_path: str, container_file: str, push_re
     logging.info('Detected apk package manager')
     package_manager = ApkPackageManager()
 
+  if package_manager is None:
+    logging.error("No supported package manager could be found. Exiting")
+    return 2
+
   packages = package_manager.extract_packages(container_file_content)
 
   logging.info(f'Found {len(packages)} packages in {repo_path + ' / ' + container_file}')
