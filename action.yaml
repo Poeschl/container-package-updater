@@ -7,10 +7,6 @@ inputs:
   containerFile:
     description: 'The container file to check'
     required: true
-  repository:
-    description: 'The repository update PRs should be created in'
-    required: false
-    default: ${{ github.repository }}
   osVersion:
     description: 'The OS version to use for the version check. Example "3.18" for Alpine'
     required: false
@@ -19,6 +15,10 @@ inputs:
     description: 'The architectures to check. (Comma separated in string)'
     required: false
     default: 'x86_64'
+  dryRun:
+    description: 'If true, no PR will be created'
+    required: false
+    default: 'false'
 runs:
   using: "docker"
   image: Dockerfile
@@ -28,8 +28,10 @@ runs:
     - '--containerFile'
     - ${{ inputs.containerFile }}
     - '--repository'
-    - ${{ inputs.repository }}
+    - ${{ github.repository }}
     - '--osVersion'
     - ${{ inputs.osVersion }}
     - '--architecture'
     - ${{ inputs.architectures }}
+    - '--dryRun'
+    - ${{ inputs.dryRun }}
