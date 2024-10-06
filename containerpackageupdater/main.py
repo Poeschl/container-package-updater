@@ -86,13 +86,12 @@ if __name__ == '__main__':
   parser.add_argument('--repositoryWorkspace', required=False, help='The folder of the repository holding the container file.', default='.')
   parser.add_argument('--repository', required=False, help='The repository update PRs should be created in', default=os.environ.get('GITHUB_REPOSITORY'))
   parser.add_argument('--osVersion', required=False, help='The os version to use for the version check. Example "3.18" for alpine', default=3.18)
-  parser.add_argument('--architecture',
-                      required=False,
-                      help='The architectures to check. (Use multiple for multiple architectures)',
-                      default=['x86_64'],
-                      action='append')
+  parser.add_argument('--architectures', required=False, help='The architectures to check. (Comma-separated list)', default='x86_64', type=str)
   parser.add_argument('--dryRun', required=False, help='If true, no PR is created.', default=False)
 
   args = parser.parse_args()
+  parsed_architectures = []
+  if args.architectures is not None:
+    parsed_architectures = [s.strip() for s in args.architectures.split(",")]
 
-  exit(main(args.token, args.dryRun, args.repositoryWorkspace, args.containerFile, args.repository, args.osVersion, args.architecture))
+  exit(main(args.token, args.dryRun, args.repositoryWorkspace, args.containerFile, args.repository, args.osVersion, parsed_architectures))
