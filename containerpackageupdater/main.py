@@ -42,8 +42,7 @@ def update_single_version(package: Package, latest_package: Package, container_f
     logging.info('Skipping update for package. Already exists in a PR.')
 
 
-def main(token: str, dry_run: bool, container_file: str, push_repository: str, os_version: str,
-         architectures: list[str]) -> int:
+def main(token: str, dry_run: bool, container_file: str, push_repository: str, os_version: str, architectures: list[str]) -> int:
   reset_to_main_branch()
 
   container_file_content = read_containerfile(container_file)
@@ -66,8 +65,7 @@ def main(token: str, dry_run: bool, container_file: str, push_repository: str, o
     if len(latest_packages) == 1:
       latest_package = latest_packages[0]
       if package.version != latest_package.version:
-        update_single_version(package, latest_package, container_file, package_manager, container_file_content,
-                              push_repository, token, dry_run)
+        update_single_version(package, latest_package, container_file, package_manager, container_file_content, push_repository, token, dry_run)
       else:
         logging.info(f'Package "{package.name}" is up to date.')
     elif len(latest_packages) > 1:
@@ -77,10 +75,7 @@ def main(token: str, dry_run: bool, container_file: str, push_repository: str, o
 
 
 if __name__ == '__main__':
-  logging.basicConfig(level=logging.INFO,
-                      format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
-                      datefmt="%Y-%m-%d %H:%M:%S",
-                      stream=sys.stdout)
+  logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s [%(name)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S", stream=sys.stdout)
 
   parser = argparse.ArgumentParser(description='Docker Package Updater')
   parser.add_argument('--token', required=True, help='The GitHub token to use for PR creation')

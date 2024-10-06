@@ -22,6 +22,7 @@ class PackageManagerHandler(ABC):
   def update_package_in_containerfile(self, containerfile_content: str, package: Package, latest_package: Package) -> str:
     pass
 
+
 class ApkPackageManager(PackageManagerHandler):
 
   def extract_packages(self, containerFile_content: str) -> list:

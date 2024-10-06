@@ -28,11 +28,6 @@ def push_branch(branch_name: str):
 def create_pull_request(token: str, repo_name: str, branch_name: str, title: str, body: str):
   g = Github(token)
   repo = g.get_repo(repo_name)
-  pr = repo.create_pull(
-    title=title,
-    body=body,
-    head=branch_name,
-    base='main'
-  )
+  pr = repo.create_pull(title=title, body=body, head=branch_name, base='main')
   pr.set_labels('dependencies')
   logging.info(f'Created pull request {pr.number} for branch {branch_name}')
