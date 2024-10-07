@@ -4,7 +4,7 @@ import os
 import sys
 
 from containerpackageupdater.gh import reset_to_main_branch, push_branch, create_pull_request, exists_branch, \
-  create_or_checkout_branch, commit_file_to_current_branch
+  checkout_branch, commit_file_to_current_branch, rebase_branch_to_main, update_pull_request
 from containerpackageupdater.models import Package
 from containerpackageupdater.package_manager_handler import ApkPackageManager, PackageManagerHandler
 
@@ -27,20 +27,26 @@ def update_single_version(package: Package, latest_package: Package, container_f
   update_branch = exists_branch(repo_path, branch_name)
 
   if not dry_run:
-    create_or_checkout_branch(repo_path, branch_name)
+    checkout_branch(repo_path, branch_name, not update_branch)
+    if update_branch:
+      rebase_branch_to_main(repo_path, branch_name)
+
   updated_content = package_manager.update_package_in_containerfile(container_file_content, package, latest_package)
   write_containerfile(repo_path + '/' + container_file, updated_content)
   change_name = f':arrow_up: Update {package.name} to version {latest_package.version}'
   try:
     if not dry_run:
       commit_file_to_current_branch(repo_path, repo_path + '/' + container_file, change_name)
-      push_branch(repo_path, branch_name)
+      push_branch(repo_path, branch_name, force=update_branch)
 
       pr_body = "| Package Name | Current Version | Latest Version |\n"
       pr_body += "|--------------|-----------------|----------------|\n"
       pr_body += f"| {package.name} | {package.version} | {latest_package.version} |\n"
 
-      create_pull_request(token, push_repository, branch_name, change_name, pr_body)
+      if update_branch:
+        update_pull_request(token, push_repository, branch_name, pr_body)
+      else:
+        create_pull_request(token, push_repository, branch_name, change_name, pr_body)
     else:
       logging.info(f"Would have created a PR for {package.name} -> {latest_package.version}")
   except ValueError:

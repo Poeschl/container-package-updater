@@ -15,13 +15,19 @@ def exists_branch(repo_path: str, branch_name: str) -> bool:
   return branch_name in repo.heads
 
 
-def create_or_checkout_branch(repo_path: str, branch_name: str):
+def checkout_branch(repo_path: str, branch_name: str, create_branch: bool):
   repo = git.Repo(repo_path)
-  if branch_name not in repo.heads:
+  if create_branch:
     repo.git.checkout('HEAD', b=branch_name)
     logging.info(f'Created branch {branch_name}.')
   else:
     repo.git.checkout(branch_name)
+
+
+def rebase_branch_to_main(repo_path: str, branch_name: str):
+  repo = git.Repo(repo_path)
+  repo.git.rebase('main', branch_name)
+  logging.info(f'Rebased branch {branch_name} to main.')
 
 
 def commit_file_to_current_branch(repo_path: str, file_path: str, commit_message: str):
@@ -43,3 +49,11 @@ def create_pull_request(token: str, repo_name: str, branch_name: str, title: str
   pr = repo.create_pull(title=title, body=body, head=branch_name, base='main')
   pr.set_labels('dependencies')
   logging.info(f'Created pull request {pr.number} for branch {branch_name}')
+
+
+def update_pull_request(token: str, repo_name: str, branch_name: str, body: str):
+  g = Github(token)
+  repo = g.get_repo(repo_name)
+  pr = repo.get_pulls(state='open', base='main', head=branch_name).get_page(0)[0]
+  pr.edit(body=body)
+  logging.info(f'Updated pull request {pr.number} for branch {branch_name}')
