@@ -10,19 +10,31 @@ def reset_to_main_branch(repo_path: str):
   repo.git.reset('--hard', 'origin/main')
 
 
-def commit_file_to_new_branch(repo_path: str, branch_name: str, file_path: str, commit_message: str):
+def exists_branch(repo_path: str, branch_name: str) -> bool:
   repo = git.Repo(repo_path)
-  if branch_name in repo.heads:
-    raise ValueError(f'Branch {branch_name} already exists.')
-  repo.git.checkout('HEAD', b=branch_name)
+  return branch_name in repo.heads
+
+
+def create_or_checkout_branch(repo_path: str, branch_name: str):
+  repo = git.Repo(repo_path)
+  if branch_name not in repo.heads:
+    repo.git.checkout('HEAD', b=branch_name)
+    logging.info(f'Created branch {branch_name}.')
+  else:
+    repo.git.checkout(branch_name)
+
+
+def commit_file_to_current_branch(repo_path: str, file_path: str, commit_message: str):
+  repo = git.Repo(repo_path)
   repo.index.add([file_path])
   repo.index.commit(commit_message)
-  logging.info(f'Created branch {branch_name} and committed changes.')
+  logging.info(f'Committed changes.')
 
 
-def push_branch(repo_path: str, branch_name: str):
+def push_branch(repo_path: str, branch_name: str, force=False):
   repo = git.Repo(repo_path)
-  repo.git.push('origin', branch_name)
+  repo.git.push('origin', branch_name, force=force)
+  logging.info(f'Pushed branch {branch_name} to origin. (forced={force})')
 
 
 def create_pull_request(token: str, repo_name: str, branch_name: str, title: str, body: str):

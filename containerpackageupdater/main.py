@@ -3,7 +3,8 @@ import logging
 import os
 import sys
 
-from containerpackageupdater.gh import reset_to_main_branch, commit_file_to_new_branch, push_branch, create_pull_request
+from containerpackageupdater.gh import reset_to_main_branch, push_branch, create_pull_request, exists_branch, \
+  create_or_checkout_branch, commit_file_to_current_branch
 from containerpackageupdater.models import Package
 from containerpackageupdater.package_manager_handler import ApkPackageManager, PackageManagerHandler
 
@@ -22,15 +23,17 @@ def update_single_version(package: Package, latest_package: Package, container_f
                           push_repository: str, token: str, dry_run: bool, repo_path: str):
   logging.info(f'Package "{package.name}" is outdated. Current version: {package.version}, latest version: {latest_package.version}')
 
+  branch_name = f'containerfile-dependency/{package.name}'
+  update_branch = exists_branch(repo_path, branch_name)
+
   if not dry_run:
-    reset_to_main_branch(repo_path)
+    create_or_checkout_branch(repo_path, branch_name)
   updated_content = package_manager.update_package_in_containerfile(container_file_content, package, latest_package)
   write_containerfile(repo_path + '/' + container_file, updated_content)
   change_name = f':arrow_up: Update {package.name} to version {latest_package.version}'
-  branch_name = f'containerfile-dependency/{package.name}'
   try:
     if not dry_run:
-      commit_file_to_new_branch(repo_path, branch_name, repo_path + '/' + container_file, change_name)
+      commit_file_to_current_branch(repo_path, repo_path + '/' + container_file, change_name)
       push_branch(repo_path, branch_name)
 
       pr_body = "| Package Name | Current Version | Latest Version |\n"
@@ -63,7 +66,7 @@ def main(token: str, dry_run: bool, repo_path: str, container_file: str, push_re
 
   packages = package_manager.extract_packages(container_file_content)
 
-  logging.info(f'Found {len(packages)} packages in {repo_path + ' / ' + container_file}')
+  logging.info(f'Found {len(packages)} packages in {repo_path}/{container_file}')
   logging.debug('Detected packages:')
   for package in packages:
     logging.debug(f'{package}')
@@ -96,6 +99,7 @@ if __name__ == '__main__':
   args = parser.parse_args()
   parsed_architectures = []
   if args.architectures is not None:
+    args.architectures: str
     parsed_architectures = [s.strip() for s in args.architectures.split(",")]
 
   exit(main(args.token, args.dryRun, args.repositoryWorkspace, args.containerFile, args.repository, args.osVersion, parsed_architectures))
