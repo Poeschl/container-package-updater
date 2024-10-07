@@ -100,7 +100,7 @@ if __name__ == '__main__':
   parser.add_argument('--repository', required=False, help='The repository update PRs should be created in', default=os.environ.get('GITHUB_REPOSITORY'))
   parser.add_argument('--osVersion', required=False, help='The os version to use for the version check. Example "3.18" for alpine', default=3.18)
   parser.add_argument('--architectures', required=False, help='The architectures to check. (Comma-separated list)', default='x86_64', type=str)
-  parser.add_argument('--dryRun', required=False, help='If true, no PR is created.', default=False)
+  parser.add_argument('--dryRun', help='If set, no PR is created.', default=False, action='store_true')
 
   args = parser.parse_args()
   parsed_architectures = []
