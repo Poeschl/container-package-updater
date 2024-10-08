@@ -4,7 +4,7 @@ import os
 import sys
 
 from containerpackageupdater.gh import reset_to_main_branch, push_branch, create_pull_request, exists_branch, \
-  checkout_branch, commit_file_to_current_branch, rebase_branch_to_main, update_pull_request
+  checkout_branch, commit_file_to_current_branch, rebase_branch_to_main, update_pull_request, create_branch_from_main
 from containerpackageupdater.models import Package
 from containerpackageupdater.package_manager_handler import ApkPackageManager, PackageManagerHandler
 
@@ -15,7 +15,7 @@ def read_containerfile(file_path: str) -> str:
 
 
 def write_containerfile(file_path: str, content: str):
-  with open(file_path, 'w') as file:
+  with open(file_path, 'w', newline='\n') as file:
     file.write(content)
 
 
@@ -26,31 +26,32 @@ def update_single_version(package: Package, latest_package: Package, container_f
   branch_name = f'containerfile-dependency/{package.name}'
   update_branch = exists_branch(repo_path, branch_name)
 
+  pr_title = f':arrow_up: Update {package.name} to version {latest_package.version}'
+  pr_body = "| Package Name | Current Version | Latest Version |\n"
+  pr_body += "|--------------|-----------------|----------------|\n"
+  pr_body += f"| {package.name} | {package.version} | {latest_package.version} |\n"
+
   if not dry_run:
-    checkout_branch(repo_path, branch_name, not update_branch)
+
     if update_branch:
+      checkout_branch(repo_path, branch_name)
       rebase_branch_to_main(repo_path, branch_name)
 
-  updated_content = package_manager.update_package_in_containerfile(container_file_content, package, latest_package)
-  write_containerfile(repo_path + '/' + container_file, updated_content)
-  change_name = f':arrow_up: Update {package.name} to version {latest_package.version}'
-  try:
-    if not dry_run:
-      commit_file_to_current_branch(repo_path, repo_path + '/' + container_file, change_name)
-      push_branch(repo_path, branch_name, force=update_branch)
-
-      pr_body = "| Package Name | Current Version | Latest Version |\n"
-      pr_body += "|--------------|-----------------|----------------|\n"
-      pr_body += f"| {package.name} | {package.version} | {latest_package.version} |\n"
-
-      if update_branch:
-        update_pull_request(token, push_repository, branch_name, pr_body)
-      else:
-        create_pull_request(token, push_repository, branch_name, change_name, pr_body)
     else:
-      logging.info(f"Would have created a PR for {package.name} -> {latest_package.version}")
-  except ValueError:
-    logging.info('Skipping update for package. Already exists in a PR.')
+      create_branch_from_main(repo_path, branch_name)
+      updated_content = package_manager.update_package_in_containerfile(container_file_content, package, latest_package)
+      write_containerfile(repo_path + '/' + container_file, updated_content)
+      commit_file_to_current_branch(repo_path, container_file, pr_title)
+
+    push_branch(repo_path, branch_name, force=update_branch)
+
+    if update_branch:
+      update_pull_request(token, push_repository, branch_name, pr_body)
+    else:
+      create_pull_request(token, push_repository, branch_name, pr_title, pr_body)
+
+  else:
+    logging.info(f"Would have created a PR for {package.name} -> {latest_package.version}")
 
 
 def main(token: str, dry_run: bool, repo_path: str, container_file: str, push_repository: str, os_version: str, architectures: list[str]) -> int:
