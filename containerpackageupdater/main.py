@@ -3,7 +3,8 @@ import logging
 import os
 import sys
 
-from containerpackageupdater.gh import reset_to_main_branch, commit_file_to_new_branch, push_branch, create_pull_request
+from containerpackageupdater.gh import reset_to_main_branch, push_branch, create_pull_request, exists_branch, \
+  checkout_branch, commit_file_to_current_branch, rebase_branch_to_main, update_pull_request, create_branch_from_main
 from containerpackageupdater.models import Package
 from containerpackageupdater.package_manager_handler import ApkPackageManager, PackageManagerHandler
 
@@ -14,7 +15,7 @@ def read_containerfile(file_path: str) -> str:
 
 
 def write_containerfile(file_path: str, content: str):
-  with open(file_path, 'w') as file:
+  with open(file_path, 'w', newline='\n') as file:
     file.write(content)
 
 
@@ -22,26 +23,35 @@ def update_single_version(package: Package, latest_package: Package, container_f
                           push_repository: str, token: str, dry_run: bool, repo_path: str):
   logging.info(f'Package "{package.name}" is outdated. Current version: {package.version}, latest version: {latest_package.version}')
 
-  if not dry_run:
-    reset_to_main_branch(repo_path)
-  updated_content = package_manager.update_package_in_containerfile(container_file_content, package, latest_package)
-  write_containerfile(repo_path + '/' + container_file, updated_content)
-  change_name = f':arrow_up: Update {package.name} to version {latest_package.version}'
   branch_name = f'containerfile-dependency/{package.name}'
-  try:
-    if not dry_run:
-      commit_file_to_new_branch(repo_path, branch_name, repo_path + '/' + container_file, change_name)
-      push_branch(repo_path, branch_name)
+  update_branch = exists_branch(repo_path, branch_name)
 
-      pr_body = "| Package Name | Current Version | Latest Version |\n"
-      pr_body += "|--------------|-----------------|----------------|\n"
-      pr_body += f"| {package.name} | {package.version} | {latest_package.version} |\n"
+  pr_title = f':arrow_up: Update {package.name} to version {latest_package.version}'
+  pr_body = "| Package Name | Current Version | Latest Version |\n"
+  pr_body += "|--------------|-----------------|----------------|\n"
+  pr_body += f"| {package.name} | {package.version} | {latest_package.version} |\n"
 
-      create_pull_request(token, push_repository, branch_name, change_name, pr_body)
+  if not dry_run:
+
+    if update_branch:
+      checkout_branch(repo_path, branch_name)
+      rebase_branch_to_main(repo_path, branch_name)
+
     else:
-      logging.info(f"Would have created a PR for {package.name} -> {latest_package.version}")
-  except ValueError:
-    logging.info('Skipping update for package. Already exists in a PR.')
+      create_branch_from_main(repo_path, branch_name)
+      updated_content = package_manager.update_package_in_containerfile(container_file_content, package, latest_package)
+      write_containerfile(repo_path + '/' + container_file, updated_content)
+      commit_file_to_current_branch(repo_path, container_file, pr_title)
+
+    push_branch(repo_path, branch_name, force=update_branch)
+
+    if update_branch:
+      update_pull_request(token, push_repository, branch_name, pr_body)
+    else:
+      create_pull_request(token, push_repository, branch_name, pr_title, pr_body)
+
+  else:
+    logging.info(f"Would have created a PR for {package.name} -> {latest_package.version}")
 
 
 def main(token: str, dry_run: bool, repo_path: str, container_file: str, push_repository: str, os_version: str, architectures: list[str]) -> int:
@@ -63,7 +73,7 @@ def main(token: str, dry_run: bool, repo_path: str, container_file: str, push_re
 
   packages = package_manager.extract_packages(container_file_content)
 
-  logging.info(f'Found {len(packages)} packages in {repo_path + ' / ' + container_file}')
+  logging.info(f'Found {len(packages)} packages in {repo_path}/{container_file}')
   logging.debug('Detected packages:')
   for package in packages:
     logging.debug(f'{package}')
@@ -91,11 +101,12 @@ if __name__ == '__main__':
   parser.add_argument('--repository', required=False, help='The repository update PRs should be created in', default=os.environ.get('GITHUB_REPOSITORY'))
   parser.add_argument('--osVersion', required=False, help='The os version to use for the version check. Example "3.18" for alpine', default=3.18)
   parser.add_argument('--architectures', required=False, help='The architectures to check. (Comma-separated list)', default='x86_64', type=str)
-  parser.add_argument('--dryRun', required=False, help='If true, no PR is created.', default=False)
+  parser.add_argument('--dryRun', help='If set, no PR is created.', default=False, action='store_true')
 
   args = parser.parse_args()
   parsed_architectures = []
   if args.architectures is not None:
+    args.architectures: str
     parsed_architectures = [s.strip() for s in args.architectures.split(",")]
 
   exit(main(args.token, args.dryRun, args.repositoryWorkspace, args.containerFile, args.repository, args.osVersion, parsed_architectures))

@@ -1,5 +1,6 @@
 import logging
 import re
+import urllib
 from abc import ABC, abstractmethod
 from typing import List
 
@@ -59,7 +60,7 @@ class ApkPackageManager(PackageManagerHandler):
       response = requests.get(url)
 
       if response.status_code != 200:
-        raise Exception(f'Failed to fetch package info from main and community: {response.status_code}')
+        raise Exception(f'Failed to fetch package info from main and community: {response.status_code} - {response.text}')
 
     match = re.search(r'<th class="header">Version</th>\s*<td>\s*(?:<strong>)?([^<\s]+)(?:</strong>)?\s*</td>', response.text)
     response.close()

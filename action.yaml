@@ -26,7 +26,7 @@ inputs:
   dryRun:
     description: "If true, no PR will be created"
     required: false
-    default: "false"
+    default: false
 runs:
   using: "docker"
   image: Dockerfile
@@ -43,5 +43,4 @@ runs:
     - ${{ inputs.osVersion }}
     - "--architecture"
     - ${{ inputs.architectures }}
-    - "--dryRun"
-    - ${{ inputs.dryRun }}
+    - ${{ inputs.dryRun && '--dryRun' }}
