@@ -43,4 +43,5 @@ runs:
     - ${{ inputs.osVersion }}
     - "--architecture"
     - ${{ inputs.architectures }}
-    - ${{ inputs.dryRun == 'true' && '--dryRun' || null }}
+    - "--dryRun"
+    - ${{ inputs.dryRun  }}
