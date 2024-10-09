@@ -5,6 +5,11 @@ from git import RemoteReference
 from github import Github
 
 
+def except_dubious_git_ownership(repo_path: str):
+  repo = git.Repo(repo_path)
+  repo.config_writer(config_level='global').set_value('safe.directory', repo_path)
+
+
 def reset_to_main_branch(repo_path: str):
   repo = git.Repo(repo_path)
   repo.heads.main.checkout()
