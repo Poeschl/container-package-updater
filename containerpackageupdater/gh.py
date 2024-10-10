@@ -20,8 +20,9 @@ def reset_to_main_branch(repo_path: str):
 
 def exists_branch(repo_path: str, branch_name: str) -> bool:
   repo = git.Repo(repo_path)
-  logging.debug(f'Existing remote branches: {repo.remote().refs}')
-  return branch_name in repo.remote().refs
+  remote_branch_list = list(map(lambda remote_ref: remote_ref.name.removeprefix('origin/'), repo.remote().refs))
+  logging.debug(f'Existing remote branches: {remote_branch_list}')
+  return branch_name in remote_branch_list
 
 
 def create_branch_from_main(repo_path: str, branch_name: str):
