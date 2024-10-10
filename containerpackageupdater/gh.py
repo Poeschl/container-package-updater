@@ -16,6 +16,7 @@ def setup_workspace_repository(repo_path: str):
 def reset_to_main_branch(repo_path: str):
   repo = git.Repo(repo_path)
   repo.heads.main.checkout()
+  repo.remote().pull()
 
 
 def exists_branch(repo_path: str, branch_name: str) -> bool:
