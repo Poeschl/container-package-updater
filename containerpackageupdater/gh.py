@@ -5,9 +5,12 @@ from git import RemoteReference
 from github import Github
 
 
-def except_dubious_git_ownership(repo_path: str):
+def setup_workspace_repository(repo_path: str):
   repo = git.Repo(repo_path)
+  # set git repo path as trustworthy
   repo.config_writer(config_level='global').set_value('safe', 'directory', repo_path)
+  # fetch all git branches
+  repo.remote().fetch()
 
 
 def reset_to_main_branch(repo_path: str):
@@ -17,6 +20,7 @@ def reset_to_main_branch(repo_path: str):
 
 def exists_branch(repo_path: str, branch_name: str) -> bool:
   repo = git.Repo(repo_path)
+  logging.debug(f'Existing remote branches: {repo.remote().refs}')
   return branch_name in repo.remote().refs
 
 
@@ -31,8 +35,10 @@ def checkout_branch(repo_path: str, branch_name: str):
   repo = git.Repo(repo_path)
   if branch_name in repo.heads:
     # Local branch
+    logging.debug(f'Checkout local branch {branch_name}')
     repo.heads[branch_name].checkout()
   else:
+    logging.debug(f'Checkout remote branch {branch_name}')
     repo.remote().refs[branch_name].checkout(force=True, b=branch_name)
 
 

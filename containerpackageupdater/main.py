@@ -4,7 +4,7 @@ import os
 import sys
 
 from containerpackageupdater.gh import reset_to_main_branch, push_branch, create_pull_request, exists_branch, \
-  checkout_branch, commit_file_to_current_branch, rebase_branch_to_main, update_pull_request, create_branch_from_main, except_dubious_git_ownership
+  checkout_branch, commit_file_to_current_branch, rebase_branch_to_main, update_pull_request, create_branch_from_main, setup_workspace_repository
 from containerpackageupdater.models import Package
 from containerpackageupdater.package_manager_handler import ApkPackageManager, PackageManagerHandler
 
@@ -56,7 +56,7 @@ def update_single_version(package: Package, latest_package: Package, container_f
 
 def main(token: str, dry_run: bool, repo_path: str, container_file: str, push_repository: str, os_version: str, architectures: list[str]) -> int:
   if not dry_run:
-    except_dubious_git_ownership(repo_path)
+    setup_workspace_repository(repo_path)
     reset_to_main_branch(repo_path)
 
   container_file_content = read_containerfile(repo_path + '/' + container_file)
@@ -99,7 +99,7 @@ def str2bool(v):
 
 
 if __name__ == '__main__':
-  logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s [%(name)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S", stream=sys.stdout)
+  logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s [%(name)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S", stream=sys.stdout)
 
   parser = argparse.ArgumentParser(description='Docker Package Updater')
   parser.add_argument('--token', required=True, help='The GitHub token to use for PR creation')
