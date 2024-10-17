@@ -44,4 +44,4 @@ runs:
     - "--architecture"
     - ${{ inputs.architectures }}
     - "--dryRun"
-    - ${{ inputs.dryRun  }}
+    - ${{ inputs.dryRun }}
