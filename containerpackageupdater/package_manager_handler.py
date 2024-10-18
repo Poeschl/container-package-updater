@@ -1,6 +1,5 @@
 import logging
 import re
-import urllib
 from abc import ABC, abstractmethod
 from typing import List
 
@@ -88,13 +87,13 @@ class AptGetPackageManager(PackageManagerHandler):
     packages = set()
     for architecture in architectures:
       try:
-        version = self.get_debian_package_version(os_version, package_name)
+        version = self.get_debian_package_version(os_version, package_name, architecture)
         packages.add(Package(name=package_name, version=version))
       except Exception as e:
         logging.error(f'Failed to fetch package info for {package_name} on {architecture}: {e}')
     return list(packages)
 
-  def get_debian_package_version(self, os_version: str, package_name: str) -> str:
+  def get_debian_package_version(self, os_version: str, package_name: str, architecture: str) -> str:
 
     # Use the Debian Tracker API to get package information
     url = f"https://packages.debian.org/{os_version}/{package_name}"
@@ -103,12 +102,20 @@ class AptGetPackageManager(PackageManagerHandler):
     if response.status_code != 200:
       raise Exception(f"Failed to retrieve package information: {response.status_code}")
 
-    match = re.search(r'<h1>Paket: .* \((.*)\)', response.text)
-    response.close()
+    match = re.search(r'<h1>Package:.* \((.*)\)', response.text)
+
     if not match:
       raise Exception(f'Could not find version info for package "{package_name}"')
 
-    return match.group(1)
+    version = match.group(1)
+
+    if 'others' in version:
+      logging.info("Use per-architecture version")
+      match = re.search(r'<th><a href="[^"]+">' + architecture + '</a></th>\\s*<td class=\'vcurrent\'>([\\d.]+-[^<]+)</td>', response.text)
+      version = match.group(1)
+
+    response.close()
+    return version
 
   def update_package_in_containerfile(self, containerfile_content: str, package: Package, latest_package: Package) -> str:
     return containerfile_content.replace(f'{package.name}={package.version}', f'{package.name}={latest_package.version}')

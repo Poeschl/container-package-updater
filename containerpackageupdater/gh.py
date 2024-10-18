@@ -10,7 +10,7 @@ def setup_workspace_repository(repo_path: str):
   # set git repo path as trustworthy
   repo.config_writer(config_level='global').set_value('safe', 'directory', repo_path)
   # fetch all git branches
-  repo.remote().fetch()
+  repo.remote().fetch(prune=True)
 
 
 def reset_to_main_branch(repo_path: str):
