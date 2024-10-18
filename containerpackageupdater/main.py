@@ -6,7 +6,7 @@ import sys
 from containerpackageupdater.gh import reset_to_main_branch, push_branch, create_pull_request, exists_branch, \
   checkout_branch, commit_file_to_current_branch, rebase_branch_to_main, update_pull_request, create_branch_from_main, setup_workspace_repository
 from containerpackageupdater.models import Package
-from containerpackageupdater.package_manager_handler import ApkPackageManager, PackageManagerHandler
+from containerpackageupdater.package_manager_handler import ApkPackageManager, PackageManagerHandler, AptGetPackageManager
 
 
 def read_containerfile(file_path: str) -> str:
@@ -67,6 +67,9 @@ def main(token: str, dry_run: bool, repo_path: str, container_file: str, push_re
   if 'apk add' in container_file_content:
     logging.info('Detected apk package manager')
     package_manager = ApkPackageManager()
+  elif 'apt-get update' in container_file_content:
+    logging.info('Detected apt-get package manager')
+    package_manager = AptGetPackageManager()
 
   if package_manager is None:
     logging.error("No supported package manager could be found. Exiting")

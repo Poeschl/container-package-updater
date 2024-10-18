@@ -13,9 +13,9 @@ jobs:
           - file: test-files/alpine-Containerfile
             osVersion: 3.18
             architectures: "x86_64, aarch64, armhf, armv7, x86"
-      #          - file: test-files/debian-Containerfile
-      #            osVersion: bookworm
-      #            architectures: "amd64, arm64, i386, armel, armhf"
+          - file: test-files/debian-Containerfile
+            osVersion: bookworm
+            architectures: "amd64, arm64, i386, armel, armhf"
       fail-fast: false
     steps:
       - name: ↩️ Checkout
