@@ -4,9 +4,19 @@ from abc import ABC, abstractmethod
 from typing import List
 
 import requests
+from fake_useragent import UserAgent
+from requests import Timeout, Session
 
-from containerpackageupdater.gh import push_branch
 from containerpackageupdater.models import Package
+
+REQUEST_TIMEOUT = 5
+REQUEST_HEADERS = {
+    'User-Agent': str(UserAgent().random),
+    'Accept': 'text/html',
+    'Accept-Encoding': 'gzip, deflate, br, zstd',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Cache-Control': 'no-cache'
+}
 
 
 class PackageManagerHandler(ABC):
@@ -45,15 +55,16 @@ class ApkPackageManager(PackageManagerHandler):
 
   def find_online_updates(self, os_version: str, package: Package, architectures: List[str]) -> List[Package]:
     packages = set()
+    requests_session = requests.session()
     for architecture in architectures:
       try:
-        version = self.fetch_latest_version_of_apk_package(os_version, package, architecture)
+        version = self.fetch_latest_version_of_apk_package(requests_session, os_version, package, architecture)
         packages.add(Package(name=package.name, version=version))
       except Exception as e:
         logging.error(f'Failed to fetch package info for {package.name} on {architecture}: {e}')
     return list(packages)
 
-  def fetch_latest_version_of_apk_package(self, alpine_version: str, package: Package, architecture: str) -> str:
+  def fetch_latest_version_of_apk_package(self, request_session: Session, alpine_version: str, package: Package, architecture: str) -> str:
     if alpine_version is None:
       raise ValueError('Alpine version is required to check for the latest package version')
 
@@ -65,29 +76,32 @@ class ApkPackageManager(PackageManagerHandler):
     if package.repository is not None:
       repository_for_package = package.repository
 
-    trys_left = 1
-    while trys_left >= 0:
-      url = f'https://pkgs.alpinelinux.org/package/{alpine_version_for_package}/{repository_for_package}/{architecture}/{package.name}'
-      response = requests.get(url)
+    try:
+      trys_left = 1
+      while trys_left >= 0:
+        url = f'https://pkgs.alpinelinux.org/package/{alpine_version_for_package}/{repository_for_package}/{architecture}/{package.name}'
+        response = request_session.get(url, headers=REQUEST_HEADERS, timeout=REQUEST_TIMEOUT)
+
+        if response.status_code != 200:
+          response.close()
+          # Try community repository
+          repository_for_package = "community"
+          logging.info(f'Retry update check in community repository for "{package.name}"')
+          trys_left = trys_left - 1
+        else:
+          trys_left = -1
 
       if response.status_code != 200:
-        response.close()
-        # Try community repository
-        repository_for_package = "community"
-        logging.info(f"Retry update check in community repository for {package.name} ")
-        trys_left -= 1
-      else:
-        trys_left = 0
+        raise Exception(f'Failed to fetch package info from main and community: {response.status_code} - {response.request.url}  \n{response.text}')
 
-    if response.status_code != 200:
-      raise Exception(f'Failed to fetch package info from main and community: {response.status_code} - {response.text}')
+      match = re.search(r'<th class="header">Version</th>\s*<td>\s*(?:<strong>)?([^<\s]+)(?:</strong>)?\s*</td>', response.text)
+      response.close()
+      if not match:
+        raise Exception(f'Could not find version info for package "{package.name}"')
 
-    match = re.search(r'<th class="header">Version</th>\s*<td>\s*(?:<strong>)?([^<\s]+)(?:</strong>)?\s*</td>', response.text)
-    response.close()
-    if not match:
-      raise Exception(f'Could not find version info for package "{package.name}"')
-
-    return match.group(1)
+      return match.group(1)
+    except Timeout:
+      raise Exception(f'Could not get version info for "{package.name}". Timeout on webpage ({url})')
 
   def update_package_in_containerfile(self, containerfile_content: str, package: Package, latest_package: Package) -> str:
     return containerfile_content.replace(f'{package.name}={package.version}', f'{package.name}={latest_package.version}')
@@ -106,37 +120,41 @@ class AptGetPackageManager(PackageManagerHandler):
 
   def find_online_updates(self, os_version: str, package: Package, architectures: List[str]) -> List[Package]:
     packages = set()
+    requests_session = requests.session()
     for architecture in architectures:
       try:
-        version = self.get_debian_package_version(os_version, package.name, architecture)
+        version = self.get_debian_package_version(requests_session, os_version, package.name, architecture)
         packages.add(Package(name=package.name, version=version))
       except Exception as e:
         logging.error(f'Failed to fetch package info for {package.name} on {architecture}: {e}')
     return list(packages)
 
-  def get_debian_package_version(self, os_version: str, package_name: str, architecture: str) -> str:
+  def get_debian_package_version(self, requests_session: Session, os_version: str, package_name: str, architecture: str) -> str:
 
-    # Use the Debian Tracker API to get package information
-    url = f"https://packages.debian.org/{os_version}/{package_name}"
-    response = requests.get(url)
+    try:
+      # Use the Debian Tracker API to get package information
+      url = f"https://packages.debian.org/{os_version}/{package_name}"
+      response = requests_session.get(url, headers=REQUEST_HEADERS, timeout=REQUEST_TIMEOUT)
 
-    if response.status_code != 200:
-      raise Exception(f"Failed to retrieve package information: {response.status_code}")
+      if response.status_code != 200:
+        raise Exception(f"Failed to retrieve package information: {response.status_code}")
 
-    match = re.search(r'<h1>Package:.* \((.*)\)', response.text)
+      match = re.search(r'<h1>Package:.* \((.*)\)', response.text)
 
-    if not match:
-      raise Exception(f'Could not find version info for package "{package_name}"')
+      if not match:
+        raise Exception(f'Could not find version info for package "{package_name}"')
 
-    version = match.group(1)
-
-    if 'others' in version:
-      logging.info("Use per-architecture version")
-      match = re.search(r'<th><a href="[^"]+">' + architecture + '</a></th>\\s*<td class=\'vcurrent\'>([\\d.]+-[^<]+)</td>', response.text)
       version = match.group(1)
 
-    response.close()
-    return version
+      if 'others' in version:
+        logging.debug(f'Use per-architecture parsing for "{package_name}"')
+        match = re.search(r'<th><a href="[^"]+">' + architecture + '</a></th>\\s*<td class=\'vcurrent\'>([\\d.]+-[^<]+)</td>', response.text)
+        version = match.group(1)
+
+      response.close()
+      return version
+    except Timeout:
+      raise Exception(f'Could not get version info for "{package_name}". Timeout on webpage ({url})')
 
   def update_package_in_containerfile(self, containerfile_content: str, package: Package, latest_package: Package) -> str:
     return containerfile_content.replace(f'{package.name}={package.version}', f'{package.name}={latest_package.version}')
