@@ -82,7 +82,7 @@ def main(token: str, dry_run: bool, repo_path: str, container_file: str, push_re
   for package in packages:
     logging.debug(f'{package}')
 
-    latest_packages = package_manager.find_online_updates(os_version, package.name, architectures)
+    latest_packages = package_manager.find_online_updates(os_version, package, architectures)
     if len(latest_packages) == 1:
       latest_package = latest_packages[0]
       if package.version != latest_package.version:

@@ -10,6 +10,7 @@ FROM docker.io/python:3.12-slim as run
 
 WORKDIR /action/workspace
 ENV PYTHONPATH=/action/workspace:$PYTHONPATH
+ENV PYTHONUNBUFFERED=1
 
 RUN apt-get update && apt-get -y --no-install-recommends install \
     git \
