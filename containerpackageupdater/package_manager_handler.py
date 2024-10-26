@@ -9,7 +9,7 @@ from requests import Timeout, Session
 
 from containerpackageupdater.models import Package
 
-REQUEST_TIMEOUT = 5
+REQUEST_TIMEOUT = 10
 REQUEST_HEADERS = {
     'User-Agent': str(UserAgent().random),
     'Accept': 'text/html',
