@@ -17,6 +17,7 @@ REQUEST_HEADERS = {
     'Accept-Language': 'en-US,en;q=0.9',
     'Cache-Control': 'no-cache'
 }
+GLOBAL_REQUESTS_SESSION = requests.Session()
 
 
 class PackageManagerHandler(ABC):
@@ -55,16 +56,15 @@ class ApkPackageManager(PackageManagerHandler):
 
   def find_online_updates(self, os_version: str, package: Package, architectures: List[str]) -> List[Package]:
     packages = set()
-    requests_session = requests.session()
     for architecture in architectures:
       try:
-        version = self.fetch_latest_version_of_apk_package(requests_session, os_version, package, architecture)
+        version = self.fetch_latest_version_of_apk_package(os_version, package, architecture)
         packages.add(Package(name=package.name, version=version))
       except Exception as e:
         logging.error(f'Failed to fetch package info for {package.name} on {architecture}: {e}')
     return list(packages)
 
-  def fetch_latest_version_of_apk_package(self, request_session: Session, alpine_version: str, package: Package, architecture: str) -> str:
+  def fetch_latest_version_of_apk_package(self, alpine_version: str, package: Package, architecture: str) -> str:
     if alpine_version is None:
       raise ValueError('Alpine version is required to check for the latest package version')
 
@@ -80,7 +80,7 @@ class ApkPackageManager(PackageManagerHandler):
       trys_left = 1
       while trys_left >= 0:
         url = f'https://pkgs.alpinelinux.org/package/{alpine_version_for_package}/{repository_for_package}/{architecture}/{package.name}'
-        response = request_session.get(url, headers=REQUEST_HEADERS, timeout=REQUEST_TIMEOUT)
+        response = GLOBAL_REQUESTS_SESSION.get(url, headers=REQUEST_HEADERS, timeout=REQUEST_TIMEOUT)
 
         if response.status_code != 200:
           response.close()
@@ -120,21 +120,20 @@ class AptGetPackageManager(PackageManagerHandler):
 
   def find_online_updates(self, os_version: str, package: Package, architectures: List[str]) -> List[Package]:
     packages = set()
-    requests_session = requests.session()
     for architecture in architectures:
       try:
-        version = self.get_debian_package_version(requests_session, os_version, package.name, architecture)
+        version = self.get_debian_package_version(os_version, package.name, architecture)
         packages.add(Package(name=package.name, version=version))
       except Exception as e:
         logging.error(f'Failed to fetch package info for {package.name} on {architecture}: {e}')
     return list(packages)
 
-  def get_debian_package_version(self, requests_session: Session, os_version: str, package_name: str, architecture: str) -> str:
+  def get_debian_package_version(self, os_version: str, package_name: str, architecture: str) -> str:
 
     try:
       # Use the Debian Tracker API to get package information
       url = f"https://packages.debian.org/{os_version}/{package_name}"
-      response = requests_session.get(url, headers=REQUEST_HEADERS, timeout=REQUEST_TIMEOUT)
+      response = GLOBAL_REQUESTS_SESSION.get(url, headers=REQUEST_HEADERS, timeout=REQUEST_TIMEOUT)
 
       if response.status_code != 200:
         raise Exception(f"Failed to retrieve package information: {response.status_code}")
