@@ -9,13 +9,14 @@ Currently supported package managers:
 
 ## Usage
 
-### As python tool
+The package updater is intended to be used as a action which runs regularly to create update PRs.
+To do this use the following example on how to integrate it into your workflow.
 
-// TBD
+There are some notes here:
 
-### As GitHub action
-
-//TBD
+* You need to have at least the permission to write content and create PRs
+* The fetch-depth needs to be set to zero to get a full checkout
+* To make a commit a git user needst to be set up. You can use any user here.
 
 Example:
 
