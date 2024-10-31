@@ -38,7 +38,7 @@ class PackageManagerHandler(ABC):
 class ApkPackageManager(PackageManagerHandler):
 
   def extract_packages(self, containerFile_content: str) -> list:
-    pattern = r'RUN apk add (.*\s+(?:\\\n\s*|["\'][^"\']+["\']\s*)+)'
+    pattern = r'apk add (.*\s+(?:\\\n\s*|["\']?[\w\d\-+.:~=]+["\']?\s*)+)'
     matches = re.findall(pattern, containerFile_content, re.MULTILINE)
     packages = set()
     for match in matches:

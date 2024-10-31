@@ -14,7 +14,17 @@ RUN git config --global advice.detachedHead false && \
     git clone https://github.com/awslabs/git-secrets.git -b ${GIT_SECRET_VERSION} /git-secrets && \
     cd /git-secrets && make install
 
-FROM $BUILD_FROM AS RUNNING
+RUN apk add --no-cache \
+      python3=3.10.14-r1 \
+      py3-gst=1.20.3-r0 \
+      py3-pip=22.1.1-r0 \
+      mopidy=3.3.0-r0 \
+      && ln -s /usr/lib/libpython3.10.so.1.0 /usr/lib/libpython3.10.so
+
+RUN apk update && \
+    apk add --no-cache \
+		'rsync=3.2.7-r4' \
+		'coreutils=9.3-r2'
 
 RUN apk add --no-cache \
 			'git=2.36.6-r0' \
